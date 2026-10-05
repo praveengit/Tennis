@@ -30,3 +30,12 @@ Open http://localhost:3000. On a phone on the same network, open
   the photo and player info to `claude-opus-5-5` and asks for JSON that matches
   a fixed schema (structured outputs). The JSON holds the overall condition,
   racket details and a priority-sorted list of recommendations.
+
+### Knowledge base
+
+`knowledge/racket-inspection.md` holds the inspection guide Claude follows:
+signs that strings need replacing, how to spot frame cracks, bumper guard,
+grommet and grip wear, string types and tension, arm-comfort advice and a
+priority guide. The server loads it into the instructions at startup, so edit
+the file and restart to change how rackets are judged. Its sources (web pages
+and YouTube videos) are listed in `knowledge/SOURCES.md`.
