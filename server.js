@@ -14,6 +14,10 @@ const app = express();
 
 app.use(express.json({ limit: "15mb" }));
 app.use(express.static(path.join(here, "public")));
+// Fonts are self-hosted from the @fontsource packages, so the page makes no third-party requests.
+for (const font of ["barlow", "barlow-condensed", "jetbrains-mono"]) {
+  app.use(`/fonts/${font}`, express.static(path.join(here, "node_modules", "@fontsource", font)));
+}
 
 const KNOWLEDGE_BASE = fs.readFileSync(path.join(here, "knowledge", "racket-inspection.md"), "utf8");
 

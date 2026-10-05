@@ -18,6 +18,9 @@
   "homepage": "https://github.com/praveengit/Tennis#readme",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",
+    "@fontsource/barlow": "^5.3.0",
+    "@fontsource/barlow-condensed": "^5.3.0",
+    "@fontsource/jetbrains-mono": "^5.3.0",
     "express": "^5.2.1"
   },
   "type": "module",
