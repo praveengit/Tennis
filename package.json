@@ -4,7 +4,8 @@
   "description": "Upload a photo of a tennis racket and get suggestions on what to change",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "eval": "node evals/run.js"
   },
   "repository": {
     "type": "git",

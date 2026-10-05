@@ -44,3 +44,20 @@ grommet and grip wear, string pattern and weave faults, string types and
 tension, arm-comfort advice and a priority guide. The server loads it into the instructions at startup, so edit
 the file and restart to change how rackets are judged. Its sources (web pages
 and YouTube videos) are listed in `knowledge/SOURCES.md`.
+
+### Teaching it with your own photos
+
+Claude Opus 5.5 can't be retrained, but two folders let you improve it with
+real racket photos:
+
+- **Reference photos** (`knowledge/examples/`): labelled photos of each
+  condition (notched strings, a cracked grommet, a weave error, and healthy
+  examples). They are sent with every analysis as examples and cached. See
+  `knowledge/examples/README.md`.
+- **Test photos** (`evals/`): photos with the correct answers written down.
+  `npm run eval` runs the analyzer on all of them and reports how often each
+  check is right, so you can tell whether a change helps. See
+  `evals/README.md`.
+
+The analysis itself lives in `lib/analyze.js`, shared by the web server and
+the scoring script.
