@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Racket Check</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>Racket Check</h1>
+      <p class="lede">Take or upload a photo of your tennis racket and get suggestions on strings, grip, frame and setup.</p>
+    </header>
+
+    <form id="form" class="card">
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept="image/*" capture="environment" hidden>
+        <img id="preview" alt="" hidden>
+        <span id="dropText">
+          <strong>Take a photo or choose an image</strong><br>
+          <small>Show the whole racket face-on, in good light. A second close-up of the strings or grip helps.</small>
+        </span>
+      </label>
+
+      <details>
+        <summary>About you (optional, improves suggestions)</summary>
+        <div class="grid">
+          <label>Level
+            <select name="level">
+              <option value="">—</option>
+              <option>Beginner</option>
+              <option>Intermediate</option>
+              <option>Advanced</option>
+              <option>Competitive / tournament</option>
+            </select>
+          </label>
+          <label>Style
+            <select name="style">
+              <option value="">—</option>
+              <option>Baseliner with heavy topspin</option>
+              <option>Flat hitter</option>
+              <option>All-court</option>
+              <option>Serve and volley</option>
+            </select>
+          </label>
+          <label>How often you play
+            <select name="frequency">
+              <option value="">—</option>
+              <option>Less than once a week</option>
+              <option>1–2 times a week</option>
+              <option>3+ times a week</option>
+            </select>
+          </label>
+          <label>Last restrung
+            <select name="lastRestrung">
+              <option value="">—</option>
+              <option>Within the last month</option>
+              <option>1–3 months ago</option>
+              <option>3–6 months ago</option>
+              <option>Over 6 months ago</option>
+              <option>Never / don't know</option>
+            </select>
+          </label>
+        </div>
+        <label>Anything else? (arm pain, lack of control, etc.)
+          <textarea name="notes" rows="2" maxlength="500"></textarea>
+        </label>
+      </details>
+
+      <button type="submit" id="submit" disabled>Analyze racket</button>
+      <p id="status" class="status" role="status"></p>
+    </form>
+
+    <section id="results" hidden></section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
