@@ -29,13 +29,18 @@ Open http://localhost:3000. On a phone on the same network, open
 - `server.js` serves the page and has `POST /api/analyze`. That endpoint sends
   the photo and player info to `claude-opus-5-5` and asks for JSON that matches
   a fixed schema (structured outputs). The JSON holds the overall condition,
-  racket details and a priority-sorted list of recommendations.
+  racket details, a priority-sorted list of recommendations, and two checks
+  that are always filled in, even when everything looks fine:
+  - **Grommet check**: a verdict (good, worn, damaged, not visible) for the
+    top, sides, throat and tie-off holes.
+  - **Pattern & weave check**: the counted pattern plus over/under weave,
+    straight mains and crosses, spacing, holes and knots.
 
 ### Knowledge base
 
 `knowledge/racket-inspection.md` holds the inspection guide Claude follows:
 signs that strings need replacing, how to spot frame cracks, bumper guard,
-grommet and grip wear, string types and tension, arm-comfort advice and a
-priority guide. The server loads it into the instructions at startup, so edit
+grommet and grip wear, string pattern and weave faults, string types and
+tension, arm-comfort advice and a priority guide. The server loads it into the instructions at startup, so edit
 the file and restart to change how rackets are judged. Its sources (web pages
 and YouTube videos) are listed in `knowledge/SOURCES.md`.

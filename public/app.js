@@ -1,20 +1,63 @@
 const MAX_SIDE = 1568; // larger images are downscaled by the API anyway
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
+const ACTION_LABEL = { high: "Act now", medium: "Soon", low: "When convenient" };
+const CONDITION_LEVELS = ["poor", "fair", "good", "excellent"];
+// Verdict levels for the dedicated checks, mapped to the same colours as findings.
+const VERDICTS = {
+  good: { label: "Good", priority: "low" },
+  ok: { label: "OK", priority: "low" },
+  worn: { label: "Worn", priority: "medium" },
+  minor_issues: { label: "Minor issues", priority: "medium" },
+  damaged: { label: "Damaged", priority: "high" },
+  faulty: { label: "Faulty", priority: "high" },
+  problem: { label: "Problem", priority: "high" },
+  not_visible: { label: "Not visible", priority: "na" },
+};
+const GROMMET_AREAS = {
+  top_10_to_2: "Top, 10 to 2 o'clock",
+  sides_3_and_9: "Sides, 3 and 9 o'clock",
+  throat: "Throat",
+  tie_offs: "Tie-off holes",
+  whole_hoop: "Whole hoop",
+};
+const WEAVE_CHECKS = {
+  weave_alternates: "Crosses alternate over/under",
+  mains_straight: "Mains straight",
+  crosses_straight: "Crosses straight",
+  even_spacing: "Even spacing",
+  holes_correct: "No skipped or wrong holes",
+  knots_tidy: "Knots tidy",
+};
+
+// Where each component sits on the racket diagram (viewBox 0 0 200 420).
+// Components without a physical spot (setup, weight_balance, other) have no zone.
+// Stringing faults (weave, holes, knots) are shown on the string bed.
+const ZONE_ALIASES = { stringing: "strings" };
+const ZONE_ANCHORS = {
+  bumper_guard: [100, 16],
+  grommets: [24, 92],
+  strings: [100, 125],
+  frame: [180, 160],
+  dampener: [100, 240],
+  grip: [100, 360],
+};
 
 const form = document.getElementById("form");
 const fileInput = document.getElementById("file");
 const drop = document.getElementById("drop");
 const preview = document.getElementById("preview");
 const dropText = document.getElementById("dropText");
+const dropChange = document.getElementById("dropChange");
 const submitBtn = document.getElementById("submit");
 const statusEl = document.getElementById("status");
 const results = document.getElementById("results");
 
 let imageData = null; // { data: base64, mediaType }
 
-function setStatus(msg, isError = false) {
+function setStatus(msg, { error = false, busy = false } = {}) {
   statusEl.textContent = msg;
-  statusEl.classList.toggle("error", isError);
+  statusEl.classList.toggle("error", error);
+  statusEl.classList.toggle("busy", busy);
 }
 
 // Resize to keep uploads small and fast, and normalise to JPEG.
@@ -43,7 +86,7 @@ function loadImage(file) {
 async function handleFile(file) {
   if (!file) return;
   if (!file.type.startsWith("image/")) {
-    setStatus("Please choose an image file.", true);
+    setStatus("Please choose an image file.", { error: true });
     return;
   }
   try {
@@ -51,11 +94,12 @@ async function handleFile(file) {
     imageData = { data: img.data, mediaType: img.mediaType };
     preview.src = img.dataUrl;
     preview.hidden = false;
-    dropText.innerHTML = "<small>Tap to choose a different photo</small>";
+    dropText.hidden = true;
+    dropChange.hidden = false;
     submitBtn.disabled = false;
     setStatus("");
   } catch (err) {
-    setStatus(err.message, true);
+    setStatus(err.message, { error: true });
   }
 }
 
@@ -75,8 +119,7 @@ form.addEventListener("submit", async (e) => {
   const player = Object.fromEntries([...fd.entries()].filter(([, v]) => v));
 
   submitBtn.disabled = true;
-  results.hidden = true;
-  setStatus("Inspecting your racket… this can take up to a minute.");
+  setStatus("On the bench. This can take up to a minute.", { busy: true });
 
   try {
     const res = await fetch("/api/analyze", {
@@ -89,7 +132,7 @@ form.addEventListener("submit", async (e) => {
     renderResults(body);
     setStatus("");
   } catch (err) {
-    setStatus(err.message, true);
+    setStatus(err.message, { error: true });
   } finally {
     submitBtn.disabled = false;
   }
@@ -106,46 +149,183 @@ function label(value) {
   return String(value).replace(/_/g, " ");
 }
 
-function renderResults(a) {
-  results.replaceChildren();
+function ticketHead(left) {
+  const now = new Date();
+  const stamp = now.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+  return el("div", { class: "ticket-head" }, el("span", {}, left), el("span", {}, stamp));
+}
 
-  const summary = el("div", { class: "card" },
-    el("div", { class: "summary-head" },
-      el("h2", {}, a.is_tennis_racket ? "Overall condition" : "No racket found"),
-      el("span", { class: `pill ${a.overall_condition}` }, a.overall_condition)),
-    el("p", {}, a.summary));
-
-  if (a.is_tennis_racket && a.racket_details) {
-    const d = a.racket_details;
-    const dl = el("dl", { class: "details" },
-      el("dt", {}, "Racket"), el("dd", {}, d.brand_model_guess || "Unknown"),
-      el("dt", {}, "String pattern"), el("dd", {}, d.string_pattern || "Unknown"));
-    if (d.visible_accessories?.length) {
-      dl.append(el("dt", {}, "Accessories"), el("dd", {}, d.visible_accessories.join(", ")));
-    }
-    summary.append(dl);
+// Racket outline with each zone coloured by its most urgent finding and
+// numbered markers matching the findings list.
+function racketSvg(zones = {}, markers = []) {
+  const cls = (zone) => (zones[zone] ? ` z-${zones[zone]}` : "");
+  const mains = [];
+  for (let x = 36; x <= 164; x += 8.5) mains.push(`<line x1="${x}" y1="20" x2="${x}" y2="232"/>`);
+  const crosses = [];
+  for (let y = 32; y <= 222; y += 10) crosses.push(`<line x1="24" y1="${y}" x2="176" y2="${y}"/>`);
+  const grommets = [];
+  for (let a = -160; a <= 160; a += 16) {
+    const t = ((a - 90) * Math.PI) / 180;
+    grommets.push(`<circle cx="${(100 + 86 * Math.cos(t)).toFixed(1)}" cy="${(125 + 114 * Math.sin(t)).toFixed(1)}" r="2.4"/>`);
   }
-  results.append(summary);
+  const wraps = [];
+  for (let y = 306; y < 408; y += 12) wraps.push(`<line class="wrap" x1="89" y1="${y + 8}" x2="111" y2="${y}"/>`);
+  const placed = {};
+  const markerSvg = markers.map(({ n, zone }) => {
+    const [x, y] = ZONE_ANCHORS[zone];
+    const i = (placed[zone] = (placed[zone] ?? -1) + 1);
+    // Zones on the side edges stack markers downwards so they stay in view.
+    const [mx, my] = zone === "frame" || zone === "grommets" ? [x, y + i * 22] : [x + i * 22, y];
+    return `<g class="marker"><circle cx="${mx}" cy="${my}" r="10"/><text x="${mx}" y="${my}">${n}</text></g>`;
+  }).join("");
+
+  return `<svg viewBox="0 0 200 420" role="img" aria-label="Racket diagram showing where each finding is">
+    <defs><clipPath id="bed"><ellipse cx="100" cy="125" rx="72" ry="100"/></clipPath></defs>
+    <g class="strings${cls("strings")}" clip-path="url(#bed)">${mains.join("")}${crosses.join("")}</g>
+    <ellipse class="frame${cls("frame")}" cx="100" cy="125" rx="80" ry="108"/>
+    <path class="frame${cls("frame")}" d="M70 225 C 80 255, 90 275, 92 300 M130 225 C 120 255, 110 275, 108 300"/>
+    <path class="bumper${cls("bumper_guard")}" d="M52 38.6 A80 108 0 0 1 148 38.6"/>
+    <g class="grommets${cls("grommets")}">${grommets.join("")}</g>
+    <rect class="dampener${cls("dampener")}" x="92" y="213" width="16" height="9" rx="2"/>
+    <rect class="grip${cls("grip")}" x="88" y="298" width="24" height="114" rx="4"/>
+    ${wraps.join("")}
+    ${markerSvg}
+  </svg>`;
+}
+
+function conditionMeter(condition) {
+  const level = CONDITION_LEVELS.indexOf(condition);
+  const bar = el("div", { class: "meter-bar" });
+  const labels = el("div", { class: "meter-labels" });
+  CONDITION_LEVELS.forEach((name, i) => {
+    bar.append(el("span", { class: i <= level ? "on" : "" }));
+    labels.append(el("span", { class: i === level ? "on" : "" }, name));
+  });
+  return el("div", { class: "meter", "aria-label": `Condition: ${condition}` }, bar, labels);
+}
+
+function renderEmpty() {
+  const map = el("div", { class: "racket-map" });
+  map.innerHTML = racketSvg();
+  map.append(el("p", { class: "map-caption" }, "Inspection points"));
+
+  const checks = el("ul", { class: "checks" });
+  [
+    ["Strings", "breaks, notching, fraying, strings out of line, string type"],
+    ["Frame", "cracks at the throat, 10 and 2, 3 and 9 o'clock; chips; warping"],
+    ["Pattern & weave", "pattern count, over/under weave, straight even strings, knots"],
+    ["Bumper & grommets", "cracked, split, flattened, missing or worn through, all round the hoop"],
+    ["Grip", "shiny, peeling or worn-out overgrip"],
+    ["Setup", "string, tension and timing for how you play"],
+  ].forEach(([name, what]) => checks.append(el("li", {}, el("b", {}, name), el("span", {}, what))));
+
+  results.replaceChildren(
+    ticketHead("Inspection ticket · awaiting racket"),
+    el("h2", {}, "What gets checked"),
+    el("p", { class: "verdict" }, "Add a photo and the ticket fills in with what was found, where on the racket it is, and what to do about it."),
+    el("div", { class: "report-grid" }, map, checks));
+}
+
+function renderResults(a) {
+  const ticketNo = `No. ${String(Date.now()).slice(-5)}`;
+
+  if (!a.is_tennis_racket) {
+    results.replaceChildren(
+      ticketHead(`Inspection ticket · ${ticketNo}`),
+      el("h2", {}, "No racket found"),
+      el("p", { class: "verdict" }, a.summary));
+    if (a.photo_tips) results.append(el("p", { class: "photo-tip" }, el("b", {}, "Photo tip"), a.photo_tips));
+    results.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
 
   const recs = [...(a.recommendations || [])].sort(
     (x, y) => (PRIORITY_ORDER[x.priority] ?? 3) - (PRIORITY_ORDER[y.priority] ?? 3));
 
-  if (recs.length) {
-    results.append(el("h2", {}, "What to change"));
-    for (const r of recs) {
-      results.append(el("div", { class: `card rec ${r.priority}` },
-        el("h3", {}, label(r.component), el("span", { class: `pill ${r.priority}` }, r.priority)),
+  const zones = {};
+  const markers = [];
+  recs.forEach((r, i) => {
+    const zone = ZONE_ALIASES[r.component] || r.component;
+    if (!ZONE_ANCHORS[zone]) return;
+    const current = zones[zone];
+    if (!current || PRIORITY_ORDER[r.priority] < PRIORITY_ORDER[current]) zones[zone] = r.priority;
+    markers.push({ n: i + 1, zone });
+  });
+  // Check verdicts colour their zone even when nothing needs doing.
+  const colourFromVerdict = (zone, condition) => {
+    const p = VERDICTS[condition]?.priority;
+    if (!zones[zone] && p && p !== "na") zones[zone] = p;
+  };
+  colourFromVerdict("grommets", a.grommet_check?.condition);
+  colourFromVerdict("strings", a.weave_check?.condition);
+
+  const map = el("div", { class: "racket-map" });
+  map.innerHTML = racketSvg(zones, markers);
+  map.append(el("p", { class: "map-caption" }, "Where it is"));
+
+  const d = a.racket_details || {};
+  const specs = el("dl", { class: "specs" });
+  const addSpec = (k, v) => specs.append(el("div", {}, el("dt", {}, k), el("dd", {}, v)));
+  addSpec("Racket", d.brand_model_guess || "Unknown");
+  addSpec("Pattern", d.string_pattern || "Unknown");
+  if (d.visible_accessories?.length) addSpec("Fitted", d.visible_accessories.join(", "));
+
+  const list = el("ol", { class: "findings" });
+  recs.forEach((r, i) => {
+    list.append(el("li", { class: "finding" },
+      el("span", { class: "finding-no" }, String(i + 1)),
+      el("div", {},
+        el("div", { class: "finding-top" },
+          el("h4", {}, label(r.component)),
+          el("span", { class: `stamp ${r.priority}` }, ACTION_LABEL[r.priority] || r.priority)),
         el("p", { class: "issue" }, r.issue),
-        el("p", {}, r.suggestion)));
-    }
-  } else if (a.is_tennis_racket) {
-    results.append(el("div", { class: "card" }, el("p", {}, "Nothing needs changing right now.")));
-  }
+        el("p", { class: "fix" }, r.suggestion))));
+  });
+  if (!recs.length) list.append(el("li", { class: "all-clear" }, "Nothing needs changing right now."));
 
-  if (a.photo_tips) {
-    results.append(el("p", { class: "tip" }, `Photo tip: ${a.photo_tips}`));
-  }
+  results.replaceChildren(
+    ticketHead(`Inspection ticket · ${ticketNo}`),
+    el("h2", {}, `Condition: ${a.overall_condition}`),
+    el("p", { class: "verdict" }, a.summary),
+    conditionMeter(a.overall_condition),
+    specs,
+    el("div", { class: "report-grid" },
+      map,
+      el("div", {}, el("h3", { class: "findings-title" }, "What to do"), list)));
 
-  results.hidden = false;
+  if (a.weave_check) {
+    const w = a.weave_check;
+    results.append(checkPanel("Pattern & weave check", w.condition, w.observations,
+      [["Pattern counted", null, w.pattern_counted || "Not counted"],
+        ...(w.checks || []).map((c) => [WEAVE_CHECKS[c.check] || label(c.check), c.status])]));
+  }
+  if (a.grommet_check) {
+    const g = a.grommet_check;
+    results.append(checkPanel("Grommet check", g.condition, g.observations,
+      (g.areas || []).map((x) => [GROMMET_AREAS[x.location] || label(x.location), x.status])));
+  }
+  if (a.photo_tips) results.append(el("p", { class: "photo-tip" }, el("b", {}, "Photo tip"), a.photo_tips));
   results.scrollIntoView({ behavior: "smooth", block: "start" });
 }
+
+function verdictStamp(status) {
+  const v = VERDICTS[status] || VERDICTS.not_visible;
+  return el("span", { class: `stamp ${v.priority}` }, v.label);
+}
+
+// rows: [label, status] pairs, or [label, null, text] for a plain value.
+function checkPanel(title, condition, observations, rows) {
+  const panel = el("section", { class: "check-panel" },
+    el("div", { class: "finding-top" }, el("h3", { class: "panel-title" }, title), verdictStamp(condition)),
+    el("p", { class: "issue" }, observations));
+  if (rows.length) {
+    const list = el("dl", { class: "specs areas" });
+    for (const [name, status, text] of rows) {
+      list.append(el("div", {}, el("dt", {}, name), el("dd", {}, status ? verdictStamp(status) : text)));
+    }
+    panel.append(list);
+  }
+  return panel;
+}
+
+renderEmpty();

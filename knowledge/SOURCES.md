@@ -70,6 +70,18 @@ own guidance rather than from a source, it is marked below.
   https://www.volealo.com/en/blogs/news/grommets-in-tennis-rackets-function-maintenance-and-when-to-change-them
 - Brian Bollman Tennis, "Grommet and Bumper Guard Replacement":
   https://brianbollmantennis.com/resources/grommet-replacement/
+- Tennis Warehouse, "How to Change Grommets on Your Racquet":
+  https://www.tennis-warehouse.com/learning_center/how-to-change-tennis-racquet-grommets.html
+- AM Stringing, "Tubing Tips & Techniques" (tubing bad holes, probing with an awl):
+  https://amstringing.com/tennis-racquet-stringers-tips/tubing-tips-techniques/
+- The Racket Surgery, "Causes of String Breakage" (breaks at the frame, 2 and 10 o'clock):
+  https://www.theracketsurgery.com/blog/18-string-breakage
+- USRSA certification requirements (frame and grommet inspection by stringers):
+  https://www.racquettech.com/certification/requirements.php
+- Tennis Warehouse forum, "Tubing broken / cracked grommets":
+  https://tt.tennis-warehouse.com/index.php?threads/tubing-broken-cracked-grommets.695993/
+- Fix My Racquet, "Service Pricing" (grommet fitting costs):
+  https://www.fixmyracquet.com/pricing
 
 ## Grip and overgrip
 - Tennis World Store, "Tennis Overgrip Replacement: When & Why":
@@ -80,6 +92,20 @@ own guidance rather than from a source, it is marked below.
   https://www.head.com/en_US/rs/stories/how-to-measure-your-tennis-grip-size
 - Tennis Warehouse Europe, "How to Measure Your Tennis Grip Size":
   https://www.tenniswarehouse-europe.com/learning_center/gear_guides/tennis_rackets/measuring_grip_size.html
+
+## Stringing quality and weave
+- The Racket Surgery, "Examples of Stringing Mistakes":
+  https://www.theracketsurgery.com/blog/19-stringing-mistakes
+- Sturdy Racquets, "Racquet Stringing Quality: How to Tell if Your Racquet is Strung Correctly":
+  https://www.sturdyracquets.com.au/blogs/guide/racquet-stringing-quality-how-to-tell-if-your-racquet-is-strung-correctly-in-2026
+- Sturdy Racquets, "Good Tennis Stringer vs Bad":
+  https://www.sturdyracquets.com.au/blogs/guide/good-tennis-stringer-vs-bad-how-to-find-professional-quality-in-2026
+- Tennis Warehouse forum, "Terrible String Job":
+  https://tt.tennis-warehouse.com/index.php?threads/terrible-string-job.694295/
+- Klipper USA, "One Piece Stringing":
+  https://klipperusa.com/pages/one-piece-stringing
+- Tennis Gears, "Tennis Racquet 2 Or 4 Knots":
+  https://tennisgears.review/tennis-racquet-2-or-4-knots-which-stringing-is-better/
 
 ## String pattern and customisation
 - Tennis Warehouse, "Tennis Racquet String Patterns Explained":
@@ -119,3 +145,7 @@ Grommets, bumper guard and grips:
 - Section 8, the photo-analysis checklist and photo tips.
 - Section 9, the priority levels.
 - Section 1.3, "6+ months old strings: recommend restring" threshold.
+- Section 4.3, the list of grommet damage signs as they appear in a photo,
+  and section 4.5, the good / worn / damaged / not visible levels.
+- Section 7.4, the good / minor issues / faulty / not visible levels for the
+  weave check.
