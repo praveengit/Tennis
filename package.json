@@ -1,0 +1,27 @@
+{
+  "name": "tennis-racket-check",
+  "version": "1.0.0",
+  "description": "Upload a photo of a tennis racket and get suggestions on what to change",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/praveengit/Tennis.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/praveengit/Tennis/issues"
+  },
+  "homepage": "https://github.com/praveengit/Tennis#readme",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
+    "express": "^5.2.1"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  }
+}
