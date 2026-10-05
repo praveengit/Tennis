@@ -33,6 +33,10 @@ the reference photos or the model) actually helps.
 `player` is optional and takes the same fields as the web form: `level`,
 `style`, `frequency`, `lastRestrung`, `notes`.
 
+Photos and answers sent with the **Send feedback** button on the page can be
+added as cases with `npm run import-feedback` (see the main README). They are
+marked `"source": "feedback"`; check them before relying on them.
+
 ## What each answer means
 
 | Answer | Values | Scored as correct when |
