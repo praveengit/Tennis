@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
@@ -14,17 +15,19 @@ const app = express();
 app.use(express.json({ limit: "15mb" }));
 app.use(express.static(path.join(here, "public")));
 
+const KNOWLEDGE_BASE = fs.readFileSync(path.join(here, "knowledge", "racket-inspection.md"), "utf8");
+
 const SYSTEM_PROMPT = `You are an experienced tennis racket technician and stringer.
 You inspect photos of tennis rackets and tell the player what should be changed,
-replaced, or adjusted. Look carefully for:
-- Strings: fraying, notching, broken or moved mains/crosses, loss of tension, dead/discoloured strings, string pattern.
-- Grip / overgrip: wear, dirt, peeling, slipperiness, wrong size hints.
-- Frame: cracks, chips, paint damage, bumper guard wear, grommet damage, warping.
-- Accessories: vibration dampener, lead tape, butt cap.
-- Setup for the player: string type and tension, head size, weight/balance, given the player info provided.
+replaced, or adjusted. Base your inspection and recommendations on the knowledge
+base below, combined with what you can see in the photo and the player info provided.
 Only report what you can actually see or reasonably infer; say so when the photo does not show enough.
 If the image does not contain a tennis racket, set is_tennis_racket to false and explain in summary.
-Be practical and specific. Write for a recreational player.`;
+Be practical and specific. Write for a recreational player.
+
+<knowledge_base>
+${KNOWLEDGE_BASE}
+</knowledge_base>`;
 
 const ANALYSIS_SCHEMA = {
   type: "object",
@@ -96,7 +99,7 @@ app.post("/api/analyze", async (req, res) => {
         effort: "medium",
         format: { type: "json_schema", schema: ANALYSIS_SCHEMA },
       },
-      system: SYSTEM_PROMPT,
+      system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
       messages: [
         {
           role: "user",
