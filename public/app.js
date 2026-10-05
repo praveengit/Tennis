@@ -54,6 +54,23 @@ const results = document.getElementById("results");
 
 let imageData = null; // { data: base64, mediaType }
 
+// The last analysis and what the player said about it, sent with "Send feedback".
+let lastRun = null; // { id, player, analysis }
+let feedback = { items: {}, note: "" };
+
+// crypto.randomUUID() needs https or localhost; getRandomValues also works over
+// plain http, e.g. when a phone opens the page via the computer's IP address.
+function newId() {
+  return [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Values a player can pick when they mark a verdict as wrong.
+const CORRECTIONS = {
+  condition: [["excellent", "Excellent"], ["good", "Good"], ["fair", "Fair"], ["poor", "Poor"]],
+  grommets: [["good", "Good"], ["worn", "Worn"], ["damaged", "Damaged"]],
+  weave: [["good", "Good"], ["minor_issues", "Minor issues"], ["faulty", "Faulty"]],
+};
+
 function setStatus(msg, { error = false, busy = false } = {}) {
   statusEl.textContent = msg;
   statusEl.classList.toggle("error", error);
@@ -129,6 +146,8 @@ form.addEventListener("submit", async (e) => {
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
+    lastRun = { id: newId(), player, analysis: body };
+    feedback = { items: {}, note: "" };
     renderResults(body);
     setStatus("");
   } catch (err) {
@@ -279,7 +298,8 @@ function renderResults(a) {
           el("h4", {}, label(r.component)),
           el("span", { class: `stamp ${r.priority}` }, ACTION_LABEL[r.priority] || r.priority)),
         el("p", { class: "issue" }, r.issue),
-        el("p", { class: "fix" }, r.suggestion))));
+        el("p", { class: "fix" }, r.suggestion),
+        feedbackControl(`finding-${i}`, null, "Is this problem really there?", { component: r.component, priority: r.priority }))));
   });
   if (!recs.length) list.append(el("li", { class: "all-clear" }, "Nothing needs changing right now."));
 
@@ -288,6 +308,7 @@ function renderResults(a) {
     el("h2", {}, `Condition: ${a.overall_condition}`),
     el("p", { class: "verdict" }, a.summary),
     conditionMeter(a.overall_condition),
+    feedbackControl("condition", CORRECTIONS.condition, "Is the condition right?"),
     specs,
     el("div", { class: "report-grid" },
       map,
@@ -297,15 +318,104 @@ function renderResults(a) {
     const w = a.weave_check;
     results.append(checkPanel("Pattern & weave check", w.condition, w.observations,
       [["Pattern counted", null, w.pattern_counted || "Not counted"],
-        ...(w.checks || []).map((c) => [WEAVE_CHECKS[c.check] || label(c.check), c.status])]));
+        ...(w.checks || []).map((c) => [WEAVE_CHECKS[c.check] || label(c.check), c.status])],
+      feedbackControl("weave", CORRECTIONS.weave, "Is the weave verdict right?")));
   }
   if (a.grommet_check) {
     const g = a.grommet_check;
     results.append(checkPanel("Grommet check", g.condition, g.observations,
-      (g.areas || []).map((x) => [GROMMET_AREAS[x.location] || label(x.location), x.status])));
+      (g.areas || []).map((x) => [GROMMET_AREAS[x.location] || label(x.location), x.status]),
+      feedbackControl("grommets", CORRECTIONS.grommets, "Is the grommet verdict right?")));
   }
   if (a.photo_tips) results.append(el("p", { class: "photo-tip" }, el("b", {}, "Photo tip"), a.photo_tips));
+  results.append(feedbackBar());
   results.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// "Right / Wrong" buttons for one finding or verdict. When a verdict is marked
+// wrong, `options` lets the player pick the correct value.
+// `about` is stored with the answer so it still makes sense without the page.
+function feedbackControl(key, options, question, about = {}) {
+  const right = el("button", { type: "button", class: "fb-btn", "aria-pressed": "false" }, "Right");
+  const wrong = el("button", { type: "button", class: "fb-btn", "aria-pressed": "false" }, "Wrong");
+  const box = el("div", { class: "fb" }, el("span", { class: "fb-q" }, question), right, wrong);
+
+  let select = null;
+  if (options) {
+    select = el("select", { class: "fb-correct", "aria-label": "What it actually is" },
+      el("option", { value: "" }, "It's actually…"),
+      ...options.map(([value, text]) => el("option", { value }, text)));
+    select.hidden = true;
+    select.addEventListener("change", () => {
+      if (feedback.items[key]) feedback.items[key].correct = select.value || undefined;
+    });
+    box.append(select);
+  }
+
+  const choose = (verdict) => {
+    const same = feedback.items[key]?.verdict === verdict;
+    if (same) delete feedback.items[key];
+    else feedback.items[key] = { verdict, ...about, ...(verdict === "wrong" && select?.value ? { correct: select.value } : {}) };
+    right.setAttribute("aria-pressed", String(!same && verdict === "right"));
+    wrong.setAttribute("aria-pressed", String(!same && verdict === "wrong"));
+    if (select) select.hidden = same || verdict !== "wrong";
+    updateFeedbackBar();
+  };
+  right.addEventListener("click", () => choose("right"));
+  wrong.addEventListener("click", () => choose("wrong"));
+  return box;
+}
+
+function feedbackBar() {
+  const note = el("textarea", { rows: "2", maxlength: "1000", placeholder: "Anything it missed or got wrong?" });
+  note.addEventListener("input", () => { feedback.note = note.value; updateFeedbackBar(); });
+  const send = el("button", { type: "button", class: "fb-send", disabled: "" }, "Send feedback");
+  const status = el("p", { class: "fb-status", role: "status" });
+  send.addEventListener("click", () => sendFeedback(send, status));
+  return el("section", { class: "fb-bar", id: "feedbackBar" },
+    el("h3", { class: "panel-title" }, "Was this right?"),
+    el("p", { class: "fb-help" }, "Mark the findings above as right or wrong, then send. Your photo and answers are kept to improve the checker."),
+    el("label", {}, "Notes", note),
+    send,
+    status);
+}
+
+function updateFeedbackBar() {
+  const send = document.querySelector("#feedbackBar .fb-send");
+  if (!send) return;
+  const count = Object.keys(feedback.items).length;
+  send.disabled = !count && !feedback.note.trim();
+  send.textContent = count ? `Send feedback (${count} marked)` : "Send feedback";
+}
+
+async function sendFeedback(send, status) {
+  if (!lastRun || !imageData) return;
+  send.disabled = true;
+  status.textContent = "Sending…";
+  status.classList.remove("error");
+  try {
+    const res = await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: lastRun.id,
+        image: imageData.data,
+        mediaType: imageData.mediaType,
+        player: lastRun.player,
+        analysis: lastRun.analysis,
+        items: feedback.items,
+        note: feedback.note.trim(),
+      }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
+    status.textContent = "Thanks, saved. You can change your answers and send again.";
+  } catch (err) {
+    status.textContent = err.message;
+    status.classList.add("error");
+  } finally {
+    updateFeedbackBar();
+  }
 }
 
 function verdictStamp(status) {
@@ -314,7 +424,7 @@ function verdictStamp(status) {
 }
 
 // rows: [label, status] pairs, or [label, null, text] for a plain value.
-function checkPanel(title, condition, observations, rows) {
+function checkPanel(title, condition, observations, rows, control) {
   const panel = el("section", { class: "check-panel" },
     el("div", { class: "finding-top" }, el("h3", { class: "panel-title" }, title), verdictStamp(condition)),
     el("p", { class: "issue" }, observations));
@@ -325,6 +435,7 @@ function checkPanel(title, condition, observations, rows) {
     }
     panel.append(list);
   }
+  if (control) panel.append(control);
   return panel;
 }
 

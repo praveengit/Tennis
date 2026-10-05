@@ -1,139 +1,23 @@
-import fs from "node:fs";
+import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import Anthropic from "@anthropic-ai/sdk";
+import { ALLOWED_MEDIA_TYPES, AnalysisError, EXAMPLES, analyzeRacket } from "./lib/analyze.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
-const MODEL = "claude-opus-5-5";
-const ALLOWED_MEDIA_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+// Photos and answers players send back; see README "Feedback". Not committed.
+const FEEDBACK_DIR = path.join(here, "feedback");
+const FEEDBACK_EXT = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif" };
+const FEEDBACK_KEY = /^(condition|grommets|weave|finding-\d{1,2})$/;
 
-const client = new Anthropic();
 const app = express();
-
 app.use(express.json({ limit: "15mb" }));
 app.use(express.static(path.join(here, "public")));
 // Fonts are self-hosted from the @fontsource packages, so the page makes no third-party requests.
 for (const font of ["barlow", "barlow-condensed", "jetbrains-mono"]) {
   app.use(`/fonts/${font}`, express.static(path.join(here, "node_modules", "@fontsource", font)));
-}
-
-const KNOWLEDGE_BASE = fs.readFileSync(path.join(here, "knowledge", "racket-inspection.md"), "utf8");
-
-const SYSTEM_PROMPT = `You are an experienced tennis racket technician and stringer.
-You inspect photos of tennis rackets and tell the player what should be changed,
-replaced, or adjusted. Base your inspection and recommendations on the knowledge
-base below, combined with what you can see in the photo and the player info provided.
-Only report what you can actually see or reasonably infer; say so when the photo does not show enough.
-If the image does not contain a tennis racket, set is_tennis_racket to false and explain in summary.
-Always fill grommet_check by going round the hoop as described in section 4 of the knowledge base,
-even when the grommets look fine; use "not_visible" when the photo does not show them clearly enough.
-If grommets need work, also add a "grommets" item to recommendations.
-Always fill weave_check the same way using section 7 of the knowledge base: count the pattern,
-trace the crosses and check spacing, holes and knots. If the stringing is faulty, also add a
-"stringing" item to recommendations.
-Be practical and specific. Write for a recreational player.
-
-<knowledge_base>
-${KNOWLEDGE_BASE}
-</knowledge_base>`;
-
-const ANALYSIS_SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  required: ["is_tennis_racket", "summary", "overall_condition", "racket_details", "grommet_check", "weave_check", "recommendations", "photo_tips"],
-  properties: {
-    is_tennis_racket: { type: "boolean" },
-    summary: { type: "string" },
-    overall_condition: { type: "string", enum: ["excellent", "good", "fair", "poor", "unknown"] },
-    racket_details: {
-      type: "object",
-      additionalProperties: false,
-      required: ["brand_model_guess", "string_pattern", "visible_accessories"],
-      properties: {
-        brand_model_guess: { type: "string" },
-        string_pattern: { type: "string" },
-        visible_accessories: { type: "array", items: { type: "string" } },
-      },
-    },
-    grommet_check: {
-      type: "object",
-      additionalProperties: false,
-      required: ["condition", "areas", "observations"],
-      properties: {
-        condition: { type: "string", enum: ["good", "worn", "damaged", "not_visible"] },
-        areas: {
-          type: "array",
-          items: {
-            type: "object",
-            additionalProperties: false,
-            required: ["location", "status"],
-            properties: {
-              location: { type: "string", enum: ["top_10_to_2", "sides_3_and_9", "throat", "tie_offs", "whole_hoop"] },
-              status: { type: "string", enum: ["good", "worn", "damaged", "not_visible"] },
-            },
-          },
-        },
-        observations: { type: "string" },
-      },
-    },
-    weave_check: {
-      type: "object",
-      additionalProperties: false,
-      required: ["condition", "pattern_counted", "checks", "observations"],
-      properties: {
-        condition: { type: "string", enum: ["good", "minor_issues", "faulty", "not_visible"] },
-        pattern_counted: { type: "string" },
-        checks: {
-          type: "array",
-          items: {
-            type: "object",
-            additionalProperties: false,
-            required: ["check", "status"],
-            properties: {
-              check: {
-                type: "string",
-                enum: ["weave_alternates", "mains_straight", "crosses_straight", "even_spacing", "holes_correct", "knots_tidy"],
-              },
-              status: { type: "string", enum: ["ok", "problem", "not_visible"] },
-            },
-          },
-        },
-        observations: { type: "string" },
-      },
-    },
-    recommendations: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["component", "issue", "suggestion", "priority"],
-        properties: {
-          component: {
-            type: "string",
-            enum: ["strings", "stringing", "grip", "frame", "bumper_guard", "grommets", "dampener", "weight_balance", "setup", "other"],
-          },
-          issue: { type: "string" },
-          suggestion: { type: "string" },
-          priority: { type: "string", enum: ["high", "medium", "low"] },
-        },
-      },
-    },
-    photo_tips: { type: "string" },
-  },
-};
-
-function buildUserText(player = {}) {
-  const lines = ["Please inspect this tennis racket and tell me what needs to be changed."];
-  const info = [];
-  if (player.level) info.push(`Playing level: ${player.level}`);
-  if (player.style) info.push(`Playing style: ${player.style}`);
-  if (player.frequency) info.push(`How often they play: ${player.frequency}`);
-  if (player.lastRestrung) info.push(`Last restrung: ${player.lastRestrung}`);
-  if (player.notes) info.push(`Player notes: ${player.notes}`);
-  if (info.length) lines.push("", "Player info:", ...info.map((l) => `- ${l}`));
-  return lines.join("\n");
 }
 
 app.post("/api/analyze", async (req, res) => {
@@ -146,40 +30,12 @@ app.post("/api/analyze", async (req, res) => {
   }
 
   try {
-    const response = await client.beta.messages.create({
-      model: MODEL,
-      max_tokens: 16000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      output_config: {
-        effort: "medium",
-        format: { type: "json_schema", schema: ANALYSIS_SCHEMA },
-      },
-      system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "image", source: { type: "base64", media_type: mediaType, data: image } },
-            { type: "text", text: buildUserText(player) },
-          ],
-        },
-      ],
-    });
-
-    if (response.stop_reason === "refusal") {
-      return res.status(422).json({ error: "The image could not be analyzed. Try a different photo." });
-    }
-    if (response.stop_reason === "max_tokens") {
-      return res.status(502).json({ error: "The analysis was cut off. Please try again." });
-    }
-
-    const text = response.content
-      .filter((block) => block.type === "text")
-      .map((block) => block.text)
-      .join("");
-    return res.json(JSON.parse(text));
+    const { analysis } = await analyzeRacket({ image, mediaType, player });
+    return res.json(analysis);
   } catch (err) {
+    if (err instanceof AnalysisError) {
+      return res.status(err.status).json({ error: err.message });
+    }
     if (err instanceof Anthropic.AuthenticationError) {
       console.error("Authentication failed - check ANTHROPIC_API_KEY.");
       return res.status(500).json({ error: "Server is not configured with a valid API key." });
@@ -195,17 +51,57 @@ app.post("/api/analyze", async (req, res) => {
       console.error(err);
       return res.status(502).json({ error: "The analysis service failed. Please try again." });
     }
-    if (err instanceof SyntaxError) {
-      console.error("Could not parse model output:", err.message);
-      return res.status(502).json({ error: "Got an unreadable analysis. Please try again." });
-    }
     console.error(err);
     return res.status(500).json({ error: "Unexpected server error." });
   }
 });
 
+app.post("/api/feedback", async (req, res) => {
+  const { id, image, mediaType, player, analysis, items, note } = req.body ?? {};
+  if (typeof id !== "string" || !/^[0-9a-f]{32}$/.test(id)) {
+    return res.status(400).json({ error: "Missing or invalid id." });
+  }
+  if (typeof image !== "string" || !image || !FEEDBACK_EXT[mediaType]) {
+    return res.status(400).json({ error: "Missing or unsupported photo." });
+  }
+  if (!analysis || typeof analysis !== "object" || !items || typeof items !== "object") {
+    return res.status(400).json({ error: "Missing analysis or answers." });
+  }
+  const cleanItems = {};
+  for (const [key, value] of Object.entries(items)) {
+    if (!FEEDBACK_KEY.test(key) || !["right", "wrong"].includes(value?.verdict)) {
+      return res.status(400).json({ error: `Invalid answer for "${key}".` });
+    }
+    cleanItems[key] = { verdict: value.verdict };
+    for (const field of ["correct", "component", "priority"]) {
+      if (typeof value[field] === "string") cleanItems[key][field] = value[field].slice(0, 40);
+    }
+  }
+
+  try {
+    const dir = path.join(FEEDBACK_DIR, id);
+    await fs.mkdir(dir, { recursive: true });
+    const photo = `photo.${FEEDBACK_EXT[mediaType]}`;
+    await fs.writeFile(path.join(dir, photo), Buffer.from(image, "base64"));
+    await fs.writeFile(path.join(dir, "feedback.json"), JSON.stringify({
+      id,
+      received_at: new Date().toISOString(),
+      photo,
+      player: player && typeof player === "object" ? player : {},
+      analysis,
+      items: cleanItems,
+      note: typeof note === "string" ? note.slice(0, 1000) : "",
+    }, null, 2));
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("Could not save feedback:", err);
+    return res.status(500).json({ error: "Could not save feedback." });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Racket analyzer running at http://localhost:${PORT}`);
+  console.log(`Reference photos loaded: ${EXAMPLES.length}`);
   if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) {
     console.warn("Warning: ANTHROPIC_API_KEY is not set - analysis requests will fail.");
   }
