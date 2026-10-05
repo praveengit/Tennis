@@ -2,9 +2,37 @@ const MAX_SIDE = 1568; // larger images are downscaled by the API anyway
 const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
 const ACTION_LABEL = { high: "Act now", medium: "Soon", low: "When convenient" };
 const CONDITION_LEVELS = ["poor", "fair", "good", "excellent"];
+// Verdict levels for the dedicated checks, mapped to the same colours as findings.
+const VERDICTS = {
+  good: { label: "Good", priority: "low" },
+  ok: { label: "OK", priority: "low" },
+  worn: { label: "Worn", priority: "medium" },
+  minor_issues: { label: "Minor issues", priority: "medium" },
+  damaged: { label: "Damaged", priority: "high" },
+  faulty: { label: "Faulty", priority: "high" },
+  problem: { label: "Problem", priority: "high" },
+  not_visible: { label: "Not visible", priority: "na" },
+};
+const GROMMET_AREAS = {
+  top_10_to_2: "Top, 10 to 2 o'clock",
+  sides_3_and_9: "Sides, 3 and 9 o'clock",
+  throat: "Throat",
+  tie_offs: "Tie-off holes",
+  whole_hoop: "Whole hoop",
+};
+const WEAVE_CHECKS = {
+  weave_alternates: "Crosses alternate over/under",
+  mains_straight: "Mains straight",
+  crosses_straight: "Crosses straight",
+  even_spacing: "Even spacing",
+  holes_correct: "No skipped or wrong holes",
+  knots_tidy: "Knots tidy",
+};
 
 // Where each component sits on the racket diagram (viewBox 0 0 200 420).
 // Components without a physical spot (setup, weight_balance, other) have no zone.
+// Stringing faults (weave, holes, knots) are shown on the string bed.
+const ZONE_ALIASES = { stringing: "strings" };
 const ZONE_ANCHORS = {
   bumper_guard: [100, 16],
   grommets: [24, 92],
@@ -185,7 +213,8 @@ function renderEmpty() {
   [
     ["Strings", "breaks, notching, fraying, strings out of line, string type"],
     ["Frame", "cracks at the throat, 10 and 2, 3 and 9 o'clock; chips; warping"],
-    ["Bumper & grommets", "worn through, split or missing"],
+    ["Pattern & weave", "pattern count, over/under weave, straight even strings, knots"],
+    ["Bumper & grommets", "cracked, split, flattened, missing or worn through, all round the hoop"],
     ["Grip", "shiny, peeling or worn-out overgrip"],
     ["Setup", "string, tension and timing for how you play"],
   ].forEach(([name, what]) => checks.append(el("li", {}, el("b", {}, name), el("span", {}, what))));
@@ -216,11 +245,19 @@ function renderResults(a) {
   const zones = {};
   const markers = [];
   recs.forEach((r, i) => {
-    if (!ZONE_ANCHORS[r.component]) return;
-    const current = zones[r.component];
-    if (!current || PRIORITY_ORDER[r.priority] < PRIORITY_ORDER[current]) zones[r.component] = r.priority;
-    markers.push({ n: i + 1, zone: r.component });
+    const zone = ZONE_ALIASES[r.component] || r.component;
+    if (!ZONE_ANCHORS[zone]) return;
+    const current = zones[zone];
+    if (!current || PRIORITY_ORDER[r.priority] < PRIORITY_ORDER[current]) zones[zone] = r.priority;
+    markers.push({ n: i + 1, zone });
   });
+  // Check verdicts colour their zone even when nothing needs doing.
+  const colourFromVerdict = (zone, condition) => {
+    const p = VERDICTS[condition]?.priority;
+    if (!zones[zone] && p && p !== "na") zones[zone] = p;
+  };
+  colourFromVerdict("grommets", a.grommet_check?.condition);
+  colourFromVerdict("strings", a.weave_check?.condition);
 
   const map = el("div", { class: "racket-map" });
   map.innerHTML = racketSvg(zones, markers);
@@ -256,8 +293,39 @@ function renderResults(a) {
       map,
       el("div", {}, el("h3", { class: "findings-title" }, "What to do"), list)));
 
+  if (a.weave_check) {
+    const w = a.weave_check;
+    results.append(checkPanel("Pattern & weave check", w.condition, w.observations,
+      [["Pattern counted", null, w.pattern_counted || "Not counted"],
+        ...(w.checks || []).map((c) => [WEAVE_CHECKS[c.check] || label(c.check), c.status])]));
+  }
+  if (a.grommet_check) {
+    const g = a.grommet_check;
+    results.append(checkPanel("Grommet check", g.condition, g.observations,
+      (g.areas || []).map((x) => [GROMMET_AREAS[x.location] || label(x.location), x.status])));
+  }
   if (a.photo_tips) results.append(el("p", { class: "photo-tip" }, el("b", {}, "Photo tip"), a.photo_tips));
   results.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function verdictStamp(status) {
+  const v = VERDICTS[status] || VERDICTS.not_visible;
+  return el("span", { class: `stamp ${v.priority}` }, v.label);
+}
+
+// rows: [label, status] pairs, or [label, null, text] for a plain value.
+function checkPanel(title, condition, observations, rows) {
+  const panel = el("section", { class: "check-panel" },
+    el("div", { class: "finding-top" }, el("h3", { class: "panel-title" }, title), verdictStamp(condition)),
+    el("p", { class: "issue" }, observations));
+  if (rows.length) {
+    const list = el("dl", { class: "specs areas" });
+    for (const [name, status, text] of rows) {
+      list.append(el("div", {}, el("dt", {}, name), el("dd", {}, status ? verdictStamp(status) : text)));
+    }
+    panel.append(list);
+  }
+  return panel;
 }
 
 renderEmpty();

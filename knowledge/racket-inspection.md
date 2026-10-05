@@ -132,16 +132,69 @@ tell the player how to check it themselves. Sources are listed in
 
 ## 4. Bumper guard and grommets
 - The **bumper guard** is the plastic strip around the top of the head; the
-  **grommets** are the plastic tubes the strings go through.
-- Replace when:
-  - The bumper guard is worn through and bare graphite shows at the top.
-  - Grommets are split, cracked, flattened, missing, or have sharp edges, so
-    string can touch the frame.
-  - Roughly every 50-60 hours of play or every third restring on a frequently
-    used racket, or every 1-2 years.
-- Not replacing them causes faster string breakage (string rubbing the frame
-  or sharp edges) and can damage the frame.
-- Replacement sets are model-specific; do it at the next restring.
+  **grommets** are the plastic tubes and strips that line the string holes so
+  the string never touches the frame. On most rackets the bumper and top
+  grommets are one piece; the sides and throat have separate grommet strips.
+
+### 4.1 Why grommets matter
+- Once a grommet cracks, splits or falls out, the string runs over the edge
+  of the bare frame hole and gets cut ("sawing"). Strings then break at the
+  same spot near the frame, not in the middle of the string bed.
+- Bad grommets also let the string rub and scratch the graphite, which can
+  weaken the frame, and can change vibration and feel.
+- A string that keeps breaking near the frame edge instead of in the centre
+  is the classic sign of a bad grommet (or a rough frame hole).
+
+### 4.2 Where grommets wear first
+- **Top of the head, 10 to 2 o'clock**: scraped on the court on low volleys
+  and pickups; bumper and top grommets wear through first.
+- **The last 2-3 main string holes** at the throat and top.
+- **Tie-off holes** (where the stringer ties the knots), and holes that carry
+  two strings ("shared holes").
+- **3 and 9 o'clock** sides, especially on rackets that are often dropped or
+  clipped against the ground.
+- **Throat grommets**, which flex with the frame.
+
+### 4.3 What to look for in a photo (best seen in a close-up of the head edge)
+- **Cracked or split grommet**: a visible split along the plastic barrel or
+  the strip, or a piece broken off at a hole.
+- **Missing grommet**: string going straight into a bare hole in the frame,
+  graphite visible around the string.
+- **Flattened, crushed or deformed**: barrels pushed flat or pushed into the
+  frame, strips not sitting flush, or a strip lifting away from the frame.
+- **Worn through**: bumper or grommet strip ground down so the string or
+  graphite shows; white or grey scuffed plastic at 10-2 o'clock.
+- **Sharp or rough edges** at the hole.
+- **Strings looking pinched, kinked or frayed right at the frame** rather
+  than in the string bed.
+- **Tubing**: small clear or white plastic tubes over the string at a hole
+  show a stringer already patched a bad grommet; the grommet set is due for
+  replacement.
+- **Discoloured, brittle-looking plastic** on an old racket.
+
+### 4.4 What the player can check (not visible in a photo)
+- Look straight into each hole from the inside of the hoop: the plastic
+  should be a smooth, complete tube.
+- A stringer probes the inside of each hole with an awl; feeling graphite
+  instead of smooth plastic means a broken grommet. Ask the stringer to check
+  grommets at every restring (certified stringers are expected to).
+- Repeated string breaks at the same spot near the frame point to that hole.
+
+### 4.5 What to recommend
+- **Damaged** (cracked, split, missing, string touching the frame): replace the
+  grommet set before or at the next restring; do not just restring over it.
+  As a short-term fix a stringer can put tubing on the string through the bad
+  hole. High priority if string touches graphite.
+- **Worn** (scuffed, flattened, bumper thin but intact): replace the bumper and
+  grommet set at the next restring. Medium priority.
+- **Good**: no action; check again at the next restring. Low priority.
+- **Not visible**: say so and ask for a close-up of the edge of the head
+  (top, sides and throat), taken from the side so the holes can be seen.
+- Rough timing: every 1-2 years, or about every 50-60 hours of play / every
+  third restring on a frequently used racket.
+- Replacement sets are specific to the racket model (and sometimes the
+  model year). Sets usually cost about $10-13; fitting is often $10-25 at a
+  stringer, and is easiest while the racket is unstrung.
 
 ## 5. Grip and overgrip
 - Overgrip signs of wear: discoloured (white/pink going grey or dark), shiny
@@ -170,15 +223,60 @@ tell the player how to check it themselves. Sources are listed in
   replaced.
 - **String savers**: see 1.1.
 
-## 7. String pattern
-- Written as mains x crosses, e.g. 16x19 (open) or 18x20 (dense).
+## 7. String pattern and weave
+
+### 7.1 Pattern
+- Written as mains x crosses, e.g. 16x19 (open) or 18x20 (dense). Mains run
+  from the throat to the top of the head; crosses run side to side.
 - Count from a clear, face-on photo when possible; otherwise say it could not
-  be counted.
+  be counted. If the racket model is recognised, compare the count with that
+  model's pattern; a different count usually means a miscount or a wrong /
+  skipped hole.
 - Open patterns (16x19, 16x18): more string movement, more spin and power,
   strings wear and notch faster.
 - Dense patterns (18x20): more control, flatter trajectory, strings last
   longer, less forgiving.
 - Swing technique and string condition affect spin more than pattern.
+
+### 7.2 What a good string job looks like
+- **Weave alternates**: each cross goes over one main and under the next, and
+  each cross is the opposite of the one before it. Trace one cross from side
+  to side to check.
+- **Mains straight and parallel**, evenly spaced, none pulled sideways.
+- **Crosses straight**, perpendicular to the mains, forming even "boxes"
+  across the bed; no bowed or wavy crosses.
+- **Every hole used as intended**: no skipped holes, no string running
+  through the wrong hole, no doubled-up strings where there should be one.
+- **Knots small and tidy** at the tie-off holes, sitting against the outside
+  of the frame, with short trimmed tails. Two knots (one-piece) or four
+  knots (two-piece) are both normal.
+- **Head shape normal**: not squashed or too round, which can come from a
+  badly mounted racket on the stringing machine.
+
+### 7.3 Faults and what they mean
+- **Weave error** (two crosses in a row with the same over/under, or a cross
+  going over two mains): a stress point where strings saw against each
+  other; it can break within a few hours and makes the bed uneven. This is a
+  stringing mistake: take it back to the stringer to be redone.
+- **Uneven spacing / crooked crosses on a fresh string job**: poor
+  workmanship or crosses not straightened while stringing. On an old string
+  job, mains pulled out of line are a sign of dead strings instead (see 1.1).
+- **Skipped or wrong holes**, or a pattern count that doesn't match the
+  model: restring correctly.
+- **Bulky, messy knots**: can crack grommets and fail early.
+- **Crushed grommets or scratches next to the knots**: pliers slipped during
+  tie-off (see section 4).
+- **Hybrid stringing** (mains and crosses look different) is intentional, not
+  a fault.
+
+### 7.4 What to recommend
+- **Good**: no action.
+- **Minor issues** (slightly uneven spacing, untidy knots): mention it; fine
+  to play, ask for a cleaner job next time.
+- **Faulty** (weave error, skipped or wrong hole, string through the wrong
+  hole): high priority; ask the stringer to redo it.
+- **Not visible**: ask for a sharp, face-on photo of the whole string bed,
+  plus a close-up of the knots.
 
 ## 8. Analysing a photo: checklist
 1. Is it a tennis racket? (Not badminton, squash, padel or pickleball.)
@@ -188,8 +286,15 @@ tell the player how to check it themselves. Sources are listed in
    colour? hybrid? string savers?
 4. Frame: lines that look like cracks (throat, 10/2, 3/9 o'clock, near
    bumper), deep chips, bare graphite, warping.
-5. Bumper guard and grommets: worn through, split, missing.
+5. Bumper guard and grommets: go round the hoop (10-2 o'clock top, 3 and 9
+   o'clock, throat, tie-off holes). Cracked, split, missing, flattened, worn
+   through, tubing already fitted, strings pinched at the hole? Always give a
+   grommet verdict: good, worn, damaged, or not visible.
 6. Grip/overgrip: colour change, shine, tears, peeling.
+6a. String pattern and weave: count mains x crosses; trace crosses for
+   alternating over/under; straight mains and crosses; even spacing; skipped
+   or wrong holes; tidy knots. Always give a weave verdict: good, minor
+   issues, faulty, or not visible.
 7. Accessories: dampener, lead tape, string savers.
 8. Combine with player info (level, style, frequency, last restrung, pain)
    for setup advice: string type, tension, restring timing.
@@ -199,10 +304,11 @@ tell the player how to check it themselves. Sources are listed in
    centre, the throat, the top of the head and the grip).
 
 ## 9. Priority guide
-- **High**: broken string; visible or suspected crack; grommets letting
-  string touch the frame; deep notching; strings older than 6 months for a
+- **High**: broken string; visible or suspected crack; cracked, split or
+  missing grommets / string touching the frame; weave error or skipped hole; deep notching; strings older than 6 months for a
   regular player; arm pain with stiff/dead poly.
-- **Medium**: worn-out overgrip; bumper guard worn through; strings shifted out
+- **Medium**: worn-out overgrip; bumper guard worn through; worn or flattened
+  grommets; strings shifted out
   of line or past their recommended hours; tension/string type mismatch for the
   player.
 - **Low**: cosmetic scratches and paint chips; dampener choice; optional

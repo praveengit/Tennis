@@ -325,13 +325,23 @@ button:disabled { background: var(--rule); color: var(--ink-soft); box-shadow: n
   letter-spacing: .06em;
   border: 1.5px solid currentColor;
   transform: rotate(-2deg);
+  white-space: nowrap;
 }
 .stamp.high { color: var(--act-now); }
 .stamp.medium { color: var(--soon); }
 .stamp.low { color: var(--later); }
+.stamp.na { color: var(--ink-soft); }
 .finding .issue { margin: 4px 0 0; color: var(--ink-soft); }
 .finding .fix { margin: 4px 0 0; }
 .finding .fix::before { content: "→ "; font-family: var(--mono); }
+
+.check-panel { margin-top: 24px; }
+.panel-title { margin: 0; font: 600 22px/1 var(--display); text-transform: uppercase; }
+.check-panel .finding-top { padding-bottom: 6px; border-bottom: 2px solid var(--ink); }
+.check-panel .issue { margin: 10px 0 12px; color: var(--ink-soft); }
+.check-panel .areas { border-top: 1px solid var(--rule); margin: 0; }
+.check-panel .areas dt { line-height: 1.6; }
+.check-panel .areas div { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
 
 .all-clear { padding: 14px 0; border-bottom: 1px solid var(--rule); }
 .photo-tip {

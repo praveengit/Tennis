@@ -27,6 +27,12 @@ replaced, or adjusted. Base your inspection and recommendations on the knowledge
 base below, combined with what you can see in the photo and the player info provided.
 Only report what you can actually see or reasonably infer; say so when the photo does not show enough.
 If the image does not contain a tennis racket, set is_tennis_racket to false and explain in summary.
+Always fill grommet_check by going round the hoop as described in section 4 of the knowledge base,
+even when the grommets look fine; use "not_visible" when the photo does not show them clearly enough.
+If grommets need work, also add a "grommets" item to recommendations.
+Always fill weave_check the same way using section 7 of the knowledge base: count the pattern,
+trace the crosses and check spacing, holes and knots. If the stringing is faulty, also add a
+"stringing" item to recommendations.
 Be practical and specific. Write for a recreational player.
 
 <knowledge_base>
@@ -36,7 +42,7 @@ ${KNOWLEDGE_BASE}
 const ANALYSIS_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["is_tennis_racket", "summary", "overall_condition", "racket_details", "recommendations", "photo_tips"],
+  required: ["is_tennis_racket", "summary", "overall_condition", "racket_details", "grommet_check", "weave_check", "recommendations", "photo_tips"],
   properties: {
     is_tennis_racket: { type: "boolean" },
     summary: { type: "string" },
@@ -51,6 +57,52 @@ const ANALYSIS_SCHEMA = {
         visible_accessories: { type: "array", items: { type: "string" } },
       },
     },
+    grommet_check: {
+      type: "object",
+      additionalProperties: false,
+      required: ["condition", "areas", "observations"],
+      properties: {
+        condition: { type: "string", enum: ["good", "worn", "damaged", "not_visible"] },
+        areas: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["location", "status"],
+            properties: {
+              location: { type: "string", enum: ["top_10_to_2", "sides_3_and_9", "throat", "tie_offs", "whole_hoop"] },
+              status: { type: "string", enum: ["good", "worn", "damaged", "not_visible"] },
+            },
+          },
+        },
+        observations: { type: "string" },
+      },
+    },
+    weave_check: {
+      type: "object",
+      additionalProperties: false,
+      required: ["condition", "pattern_counted", "checks", "observations"],
+      properties: {
+        condition: { type: "string", enum: ["good", "minor_issues", "faulty", "not_visible"] },
+        pattern_counted: { type: "string" },
+        checks: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["check", "status"],
+            properties: {
+              check: {
+                type: "string",
+                enum: ["weave_alternates", "mains_straight", "crosses_straight", "even_spacing", "holes_correct", "knots_tidy"],
+              },
+              status: { type: "string", enum: ["ok", "problem", "not_visible"] },
+            },
+          },
+        },
+        observations: { type: "string" },
+      },
+    },
     recommendations: {
       type: "array",
       items: {
@@ -60,7 +112,7 @@ const ANALYSIS_SCHEMA = {
         properties: {
           component: {
             type: "string",
-            enum: ["strings", "grip", "frame", "bumper_guard", "grommets", "dampener", "weight_balance", "setup", "other"],
+            enum: ["strings", "stringing", "grip", "frame", "bumper_guard", "grommets", "dampener", "weight_balance", "setup", "other"],
           },
           issue: { type: "string" },
           suggestion: { type: "string" },
